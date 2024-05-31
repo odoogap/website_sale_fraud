@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!--
+            capture.flow views
+        -->
+        <record id="capture_flow_tree" model="ir.ui.view">
+            <field name="name">capture.flow.tree</field>
+            <field name="model">capture.flow</field>
+            <field name="arch" type="xml">
+                <tree string="Payment Auto Capture">
+                    <field name="sequence" widget="handle"/>
+                    <field name="name"/>
+                    <field name="expression" required="action == 'decision'"/>
+                    <field name="yes_id"/>
+                    <field name="no_id"/>
+                    <field name="action"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="capture_flow_search" model="ir.ui.view">
+            <field name="name">capture.flow.search</field>
+            <field name="model">capture.flow</field>
+            <field name="arch" type="xml">
+                <search string="Payment Auto Capture">
+                    <field name="name"/>
+                    <field name="expression"/>
+                    <field name="yes_id"/>
+                    <field name="no_id"/>
+                    <field name="action"/>
+                </search>
+            </field>
+        </record>
+
+        <record id="capture_flow_form" model="ir.ui.view">
+            <field name="name">capture.flow.form</field>
+            <field name="model">capture.flow</field>
+            <field name="arch" type="xml">
+                <form string="Payment Auto Capture">
+                    <group>
+                        <field name="name"/>
+                        <field name="expression"/>
+                        <field name="yes_id"/>
+                        <field name="no_id"/>
+                        <field name="action"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+
+        <record model="ir.actions.act_window" id="capture_flow_action">
+            <field name="name">Payment Auto Capture</field>
+            <field name="res_model">capture.flow</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_id" ref="capture_flow_tree"/>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Create a new Payment Auto Capture
+                </p>
+            </field>
+        </record>
+
+        <menuitem id="capture_flow_menu"
+            name="Payment Auto Capture"
+            parent="sale.sale_order_menu"
+            groups="sales_team.group_sale_manager"
+            action="capture_flow_action"
+            sequence="4"/>
+    </data>
+</odoo>
