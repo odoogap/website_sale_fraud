@@ -40,7 +40,7 @@
                 <form string="Payment Auto Capture">
                     <group>
                         <field name="name"/>
-                        <field name="expression"/>
+                        <field name="expression" widget="code" options="{'mode': 'python'}"/>
                         <field name="yes_id"/>
                         <field name="no_id"/>
                         <field name="action"/>
@@ -61,11 +61,12 @@
             </field>
         </record>
 
-        <menuitem id="capture_flow_menu"
-            name="Payment Auto Capture"
-            parent="sale.sale_order_menu"
-            groups="sales_team.group_sale_manager"
-            action="capture_flow_action"
-            sequence="4"/>
+        <menuitem
+                id="capture_flow_menu"
+                name="Payment Auto Capture"
+                parent="sale.sale_order_menu"
+                groups="sales_team.group_sale_manager"
+                action="capture_flow_action"
+                sequence="100"/>
     </data>
 </odoo>
