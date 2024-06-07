@@ -1,2 +1,0 @@
-id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-website_sale_fraud.access_capture_flow,access_capture_flow,website_sale_fraud.model_capture_flow,base.group_user,1,1,1,1
