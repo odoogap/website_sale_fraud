@@ -45,7 +45,6 @@ class SaleOrder(models.Model):
             so.fraud_detection = True
 
     def _check_fraude(self, flow):
-        print("action_confirm 4")
         if flow.action == 'capture':
             self.payment_action_capture()
         elif flow.action == 'review':
