@@ -40,7 +40,7 @@ class SaleOrder(models.Model):
         for so in self:
             if so.fraud_detection:
                 continue
-            start_rule = self.env['capture.flow'].search([], order='sequence', limit=1)
+            start_rule = self.env['capture.flow'].search([('action', '=', 'decision')], order='sequence', limit=1)
             so._check_fraude(start_rule)
             so.fraud_detection = True
 
