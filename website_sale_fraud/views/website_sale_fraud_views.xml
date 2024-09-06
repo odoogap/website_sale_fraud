@@ -8,10 +8,11 @@
             <field name="name">capture.flow.tree</field>
             <field name="model">capture.flow</field>
             <field name="arch" type="xml">
-                <tree string="Payment Auto Capture">
+                <tree string="Payment Auto Capture" decoration-danger="not active" >
                     <field name="sequence" widget="handle"/>
                     <field name="name"/>
-                    <field name="action"/>
+                    <field name="action" invisible="1" optional="hide"/>
+                    <field name="active" invisible="1" optional="hide"/>
                     <field name="expression" invisible="action != 'decision'" required="action == 'decision'"/>
                     <field name="yes_id" invisible="action != 'decision'" required="action == 'decision'"/>
                     <field name="no_id" invisible="action != 'decision'" required="action == 'decision'"/>
@@ -25,7 +26,6 @@
             <field name="arch" type="xml">
                 <search string="Payment Auto Capture">
                     <field name="name"/>
-                    <field name="action"/>
                     <field name="expression"/>
                     <field name="yes_id"/>
                     <field name="no_id"/>
@@ -40,10 +40,10 @@
                 <form string="Payment Auto Capture">
                     <group>
                         <field name="name"/>
-                        <field name="action"/>
+                        <field name="action" invisible="1"/>
                         <field name="expression" widget="code" options="{'mode': 'python'}" invisible="action != 'decision'" required="action == 'decision'"/>
-                        <field name="yes_id" invisible="action != 'decision'" required="action == 'decision'"/>
-                        <field name="no_id" invisible="action != 'decision'" required="action == 'decision'"/>
+                        <field name="yes_id" invisible="action != 'decision'" required="action == 'decision'" widget="selection"/>
+                        <field name="no_id" invisible="action != 'decision'" required="action == 'decision'" widget="selection"/>
                     </group>
                 </form>
             </field>

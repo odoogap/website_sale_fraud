@@ -10,6 +10,7 @@
     'depends': ['website_sale'],
     'data': [
         'security/ir.model.access.csv',
+        'data/capture_flow_data.xml',
         'views/website_sale_fraud_views.xml',
     ],
     'demo': [
