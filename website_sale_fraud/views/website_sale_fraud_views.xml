@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright 2025 ERPGAP/PROMPTEQUATION LDA
+    License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl).
+-->
 <odoo>
     <data>
         <!--
@@ -8,14 +12,16 @@
             <field name="name">capture.flow.tree</field>
             <field name="model">capture.flow</field>
             <field name="arch" type="xml">
-                <tree string="Payment Auto Capture" decoration-danger="not active" >
+                <tree string="Payment Auto Capture" decoration-danger="not active">
                     <field name="sequence" widget="handle"/>
                     <field name="name"/>
-                    <field name="action" invisible="1" optional="hide"/>
-                    <field name="active" invisible="1" optional="hide"/>
+                    <field name="active" optional="hide"/>
+                    <field name="action" optional="hide"/>
+                    <field name="show_mail_template" optional="hide"/>
+                    <field name="mail_template_id" optional="hide"/>
                     <field name="expression" invisible="action != 'decision'" required="action == 'decision'"/>
                     <field name="yes_id" invisible="action != 'decision'" required="action == 'decision'"/>
-                    <field name="no_id" invisible="action != 'decision'" required="action == 'decision'"/>
+                    <field name="no_id" invisible="action != 'decision'"/>
                 </tree>
             </field>
         </record>
@@ -39,34 +45,43 @@
             <field name="arch" type="xml">
                 <form string="Payment Auto Capture">
                     <group>
-                        <field name="name"/>
                         <field name="action" invisible="1"/>
+                        <field name="show_mail_template" invisible="1"/>
+                        <field name="name"/>
                         <field name="expression" widget="code" options="{'mode': 'python'}" invisible="action != 'decision'" required="action == 'decision'"/>
-                        <field name="yes_id" invisible="action != 'decision'" required="action == 'decision'" widget="selection"/>
-                        <field name="no_id" invisible="action != 'decision'" required="action == 'decision'" widget="selection"/>
+                        <field name="yes_id" invisible="action != 'decision'" required="action == 'decision'" options="{'no_create': True, 'no_open': True}"/>
+                        <field name="no_id" invisible="action != 'decision'" required="action == 'decision'" options="{'no_create': True, 'no_open': True}"/>
+                        <field name="mail_template_id" invisible="not show_mail_template" required="show_mail_template"
+                               options="{'no_create': True, 'no_open': True}"/>
                     </group>
                 </form>
             </field>
         </record>
 
-        <record model="ir.actions.act_window" id="capture_flow_action">
-            <field name="name">Payment Auto Capture</field>
+        <record model="ir.actions.act_window" id="website_fraud_rules_action">
+            <field name="name">Website Fraud Rules</field>
             <field name="res_model">capture.flow</field>
             <field name="view_mode">tree,form</field>
             <field name="view_id" ref="capture_flow_tree"/>
+            <field name="domain">[('action', '=', 'decision')]</field>
             <field name="help" type="html">
                 <p class="o_view_nocontent_smiling_face">
-                    Create a new Payment Auto Capture
+                    Create a new Rule
                 </p>
             </field>
         </record>
 
         <menuitem
-                id="capture_flow_menu"
-                name="Payment Auto Capture"
-                parent="sale.sale_order_menu"
-                groups="sales_team.group_sale_manager"
-                action="capture_flow_action"
-                sequence="100"/>
+            id="menu_website_fraud"
+            name="Website Fraud"
+            parent="website_sale.menu_ecommerce"
+            groups="sales_team.group_sale_manager"
+            sequence="100">
+
+        <menuitem id="menu_website_fraud_rules"
+            action="website_sale_fraud.website_fraud_rules_action"/>
+
+        </menuitem>
+
     </data>
 </odoo>

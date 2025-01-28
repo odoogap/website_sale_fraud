@@ -1,6 +1,13 @@
 # -*- coding: utf-8 -*-
-from odoo import api, fields, models, tools, _
+# Copyright 2025 ERPGAP/PROMPTEQUATION LDA
+# License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl).
+
+import logging
+
+from odoo import api, fields, models, tools, SUPERUSER_ID, _
 from odoo.tools.safe_eval import safe_eval
+
+_logger = logging.getLogger(__name__)
 
 
 class SaleOrder(models.Model):
@@ -20,10 +27,10 @@ class SaleOrder(models.Model):
                 continue
             start_rule = self.env['capture.flow'].search([('action', '=', 'decision')], order='sequence', limit=1)
             if start_rule:
-                so._check_fraude(start_rule)
+                so._check_fraude(start_rule, parent_flow=None)
             so.fraud_detection_completed = True
 
-    def _check_fraude(self, flow):
+    def _check_fraude(self, flow, parent_flow):
         if flow.action == 'capture':
             self.auto_capture_after_shipping = True
             self.message_post(
@@ -33,11 +40,21 @@ class SaleOrder(models.Model):
             self.message_post(
                 body="Fraud Detection: Requires Approval for Fraud Detection",
             )
+        elif flow.action == 'send_email':
+            if parent_flow and parent_flow.mail_template_id:
+                self.with_user(SUPERUSER_ID).with_context(force_send=True).message_post_with_source(
+                    parent_flow.mail_template_id,
+                    email_layout_xmlid='mail.mail_notification_layout_with_responsible_signature',
+                    subtype_xmlid='mail.mt_comment',
+                )
+            self.message_post(
+                body="Fraud Detection: The Email will be send to the client",
+            )
         else:
             if safe_eval(flow.expression, {'object': self}):
-                self._check_fraude(flow.yes_id)
+                self._check_fraude(flow.yes_id, flow)
             else:
-                self._check_fraude(flow.no_id)
+                self._check_fraude(flow.no_id, flow)
 
 class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'

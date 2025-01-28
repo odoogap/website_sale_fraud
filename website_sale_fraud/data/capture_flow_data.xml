@@ -1,18 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright 2025 ERPGAP/PROMPTEQUATION LDA
+    License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl).
+-->
 <odoo>
     <data noupdate="0">
 
-        <record forcecreate="True" id="capture_flow_yes" model="capture.flow">
+        <record forcecreate="True" id="capture_flow_capture_payment" model="capture.flow">
             <field name="name">Capture Payment</field>
             <field name="action">capture</field>
-            <field name="sequence">1000</field>
+            <field name="sequence">1</field>
             <field name="active" eval="False"/>
         </record>
 
-        <record forcecreate="True" id="capture_flow_review" model="capture.flow">
+        <record forcecreate="True" id="capture_flow_ask_for_review" model="capture.flow">
             <field name="name">Ask for Review</field>
             <field name="action">review</field>
-            <field name="sequence">1001</field>
+            <field name="sequence">2</field>
+            <field name="active" eval="False"/>
+        </record>
+
+        <record forcecreate="True" id="capture_flow_send_email" model="capture.flow">
+            <field name="name">Send Email</field>
+            <field name="action">send_email</field>
+            <field name="sequence">3</field>
             <field name="active" eval="False"/>
         </record>
 

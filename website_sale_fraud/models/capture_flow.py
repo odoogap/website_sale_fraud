@@ -1,25 +1,52 @@
 # -*- coding: utf-8 -*-
+# Copyright 2025 ERPGAP/PROMPTEQUATION LDA
+# License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl).
+
+import logging
+
 from odoo import api, fields, models, tools, _
+from odoo.exceptions import ValidationError
+
+_logger = logging.getLogger(__name__)
 
 
 class CaptureFlow(models.Model):
     _name = "capture.flow"
     _description = "Capture Flow"
+    _order = 'sequence, id'
 
     name = fields.Char(string="Name", required=True)
     active = fields.Boolean(string="Active", default=True)
     expression = fields.Text(
         string="Expression",
         default="# object.amount_total>1000\n# len(object.order_line)>1\n"
-                "# object.partner_id.country_id.code=='US'\n# return True/False\n",)
+                "# object.partner_id.country_id.code=='US'\n# return True/False\n")
     sequence = fields.Integer(string="Sequence", default=10)
-    yes_id = fields.Many2one('capture.flow', string="Yes Flow", domain=["|", ["active", "=", True], ["active", "=", False]])
-    no_id = fields.Many2one('capture.flow', string="No Flow", domain=["|", ["active", "=", True], ["active", "=", False]])
+    yes_id = fields.Many2one('capture.flow', string="Yes Flow", domain=['|', ('action', '!=', 'decision'), ('active', '=', True)])
+    no_id = fields.Many2one('capture.flow', string="No Flow", domain=['|', ('action', '!=', 'decision'), ('active', '=', True)])
+    mail_template_id = fields.Many2one('mail.template', string="Email Template", domain=[('model', '=', 'sale.order')])
+    show_mail_template = fields.Boolean(string="Show Mail Template", compute='_compute_show_mail_template')
     action = fields.Selection([
         ('decision', 'Decision'),
         ('capture', 'Capture'),
         ('review', 'Review'),
+        ('send_email', 'Send Email')
     ], string="Action", required=True, default='decision')
+
+    @api.constrains('yes_id', 'no_id')
+    def _check_yes_id_no_id_recursion(self):
+        for rec in self:
+            if (rec.id and (rec.yes_id or rec.no_id)) and (rec.yes_id.id == rec.id or rec.no_id.id == rec.id):
+                raise ValidationError(_("Error ! You cannot create recursive 'Capture Flows'."))
+
+    @api.depends('yes_id', 'no_id')
+    def _compute_show_mail_template(self):
+        for rec in self:
+            show_mail_template = False
+            if rec.action == 'decision' and rec.yes_id or rec.no_id:
+                if rec.yes_id.action == 'send_email' or rec.no_id.action == 'send_email':
+                    show_mail_template = True
+            rec.show_mail_template = show_mail_template
 
     @api.model
     def evaluate(self):
