@@ -2,10 +2,12 @@
 # Copyright 2025 ERPGAP/PROMPTEQUATION LDA
 # License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl).
 
+from markupsafe import Markup
+
 import logging
 
-from odoo import api, fields, models, tools, SUPERUSER_ID, _
 from odoo.tools.safe_eval import safe_eval
+from odoo import api, fields, models, tools, SUPERUSER_ID, _
 
 _logger = logging.getLogger(__name__)
 
@@ -21,24 +23,48 @@ class SaleOrder(models.Model):
     fraud_detection_completed = fields.Boolean(string="Fraud Detection", default=False, help="Technical field", copy=False)
     auto_capture_after_shipping = fields.Boolean(string="Auto Capture After Shipping", default=False)
 
-    def check_fraud(self):
+    def check_fraud(self, start_flow=None):
+        """Check fraud detection process for sales orders."""
         for so in self:
-            if so.fraud_detection_completed:
+            if so.fraud_detection_completed or not so.authorized_transaction_ids:
                 continue
-            start_rule = self.env['capture.flow'].search([('action', '=', 'decision')], order='sequence', limit=1)
+            if start_flow:
+                start_rule = self.env['capture.flow'].search([('id', '=', start_flow.id)])
+            else:
+                start_rule = self.env['capture.flow'].search([('action', '=', 'decision')], order='sequence', limit=1)
             if start_rule:
-                so._check_fraude(start_rule, parent_flow=None)
+                so._check_fraud(start_rule)
             so.fraud_detection_completed = True
 
-    def _check_fraude(self, flow, parent_flow):
+    def _check_fraud(self, flow, parent_flow=None, messages=None, increment=1):
+        """Recursively process fraud detection rules and log actions."""
+        if not messages:
+            messages = ["<b>Fraud Detection:</b><br/><br/>"]
+
+        # Log execution flow
+        if parent_flow:
+            messages.append(
+                f"<b>Flow {increment}:</b><br/>"
+                f"Executing flow: <b>{flow.name}</b><br/>"
+                f"Triggered by flow: <b>{parent_flow.name}</b><br/><br/>"
+            )
+        else:
+            messages.append(
+                f"<b>Flow {increment}:</b><br/>"
+                f"Executing flow: <b>{flow.name}</b><br/><br/>"
+            )
+
+        # Handle different fraud actions
         if flow.action == 'capture':
             self.auto_capture_after_shipping = True
-            self.message_post(
-                body="Fraud Detection: Auto capture after shipping",
+            messages.append(
+                f"<b>Final Flow:</b><br/>"
+                f"🔄 Auto-capture will be processed after shipping.<br/><br/>"
             )
         elif flow.action == 'review':
-            self.message_post(
-                body="Fraud Detection: Requires Approval for Fraud Detection",
+            messages.append(
+                f"<b>Final Flow:</b><br/>"
+                f"⚠️ Transaction requires manual review and approval.<br/><br/>"
             )
         elif flow.action == 'send_email':
             if parent_flow and parent_flow.mail_template_id:
@@ -47,14 +73,29 @@ class SaleOrder(models.Model):
                     email_layout_xmlid='mail.mail_notification_layout_with_responsible_signature',
                     subtype_xmlid='mail.mt_comment',
                 )
-            self.message_post(
-                body="Fraud Detection: The Email will be send to the client",
+            messages.append(
+                f"<b>Final Flow:</b><br/>"
+                f"📧 An email notification will be sent to the client.<br/><br/>"
             )
         else:
+            # Evaluate next steps based on flow conditions
             if safe_eval(flow.expression, {'object': self}):
-                self._check_fraude(flow.yes_id, flow)
+                self._check_fraud(flow.yes_id, flow, messages, increment=increment + 1)
             else:
-                self._check_fraude(flow.no_id, flow)
+                self._check_fraud(flow.no_id, flow, messages, increment=increment + 1)
+
+        # Only post the message after all flows are processed
+        if flow.action != 'decision' and not flow.yes_id and not flow.no_id:
+            # Log all messages in a single chatter post
+            message = "".join(messages)
+            # Will keep the HTML tags
+            message = Markup(message)
+            self._log_fraud_message(message)
+
+    def _log_fraud_message(self, message):
+        """Log formatted fraud detection messages in the chatter."""
+        self.message_post(body=message)
+
 
 class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'
