@@ -36,34 +36,25 @@ class SaleOrder(models.Model):
                 so._check_fraud(start_rule)
             so.fraud_detection_completed = True
 
-    def _check_fraud(self, flow, parent_flow=None, messages=None, increment=1):
+    def _check_fraud(self, flow, parent_flow=None, parent_flow_condition=None, messages=None):
         """Recursively process fraud detection rules and log actions."""
         if not messages:
             messages = ["<b>Fraud Detection:</b><br/><br/>"]
 
         # Log execution flow
-        if parent_flow:
+        if parent_flow and parent_flow_condition:
             messages.append(
-                f"<b>Flow {increment}:</b><br/>"
-                f"Executing flow: <b>{flow.name}</b><br/>"
-                f"Triggered by flow: <b>{parent_flow.name}</b><br/><br/>"
-            )
-        else:
-            messages.append(
-                f"<b>Flow {increment}:</b><br/>"
-                f"Executing flow: <b>{flow.name}</b><br/><br/>"
+                f"{parent_flow.name}: {parent_flow_condition}<br/>"
             )
 
         # Handle different fraud actions
         if flow.action == 'capture':
             self.auto_capture_after_shipping = True
             messages.append(
-                f"<b>Final Flow:</b><br/>"
                 f"🔄 Auto-capture will be processed after shipping.<br/><br/>"
             )
         elif flow.action == 'review':
             messages.append(
-                f"<b>Final Flow:</b><br/>"
                 f"⚠️ Transaction requires manual review and approval.<br/><br/>"
             )
         elif flow.action == 'send_email':
@@ -74,15 +65,14 @@ class SaleOrder(models.Model):
                     subtype_xmlid='mail.mt_comment',
                 )
             messages.append(
-                f"<b>Final Flow:</b><br/>"
                 f"📧 An email notification will be sent to the client.<br/><br/>"
             )
         else:
             # Evaluate next steps based on flow conditions
             if safe_eval(flow.expression, {'object': self}):
-                self._check_fraud(flow.yes_id, flow, messages, increment=increment + 1)
+                self._check_fraud(flow.yes_id, flow, 'yes', messages)
             else:
-                self._check_fraud(flow.no_id, flow, messages, increment=increment + 1)
+                self._check_fraud(flow.no_id, flow, 'no', messages)
 
         # Only post the message after all flows are processed
         if flow.action != 'decision' and not flow.yes_id and not flow.no_id:
