@@ -17,8 +17,17 @@
                     <field name="name"/>
                     <field name="active" optional="hide"/>
                     <field name="action" optional="hide"/>
-                    <field name="show_mail_template" optional="hide"/>
-                    <field name="mail_template_id" optional="hide"/>
+                    <!-- Yes Flow -->
+                    <field name="yes_show_mail_template" optional="hide"/>
+                    <field name="yes_mail_template_id" optional="hide"/>
+                    <field name="yes_tag_id" optional="hide"/>
+                    <field name="yes_message" optional="hide"/>
+                    <!-- No Flow -->
+                    <field name="no_show_mail_template" optional="hide"/>
+                    <field name="no_mail_template_id" optional="hide"/>
+                    <field name="no_tag_id" optional="hide"/>
+                    <field name="no_message" optional="hide"/>
+                    <!-- -->
                     <field name="expression" invisible="action != 'decision'" required="action == 'decision'"/>
                     <field name="yes_id" invisible="action != 'decision'" required="action == 'decision'"/>
                     <field name="no_id" invisible="action != 'decision'"/>
@@ -46,13 +55,22 @@
                 <form string="Payment Auto Capture">
                     <group>
                         <field name="action" invisible="1"/>
-                        <field name="show_mail_template" invisible="1"/>
+                        <field name="yes_show_mail_template" string="Show Mail Template" invisible="1"/>
+                        <field name="no_show_mail_template" string="Show Mail Template" invisible="1"/>
                         <field name="name"/>
                         <field name="expression" widget="code" options="{'mode': 'python'}" invisible="action != 'decision'" required="action == 'decision'"/>
-                        <field name="yes_id" invisible="action != 'decision'" required="action == 'decision'" options="{'no_create': True, 'no_open': True}"/>
-                        <field name="no_id" invisible="action != 'decision'" required="action == 'decision'" options="{'no_create': True, 'no_open': True}"/>
-                        <field name="mail_template_id" invisible="not show_mail_template" required="show_mail_template"
-                               options="{'no_create': True, 'no_open': True}"/>
+                        <group name="yes_flow" string="If Yes">
+                            <field name="yes_id" string="Flow" invisible="action != 'decision'" required="action == 'decision'" options="{'no_create': True, 'no_open': True}"/>
+                            <field name="yes_mail_template_id" string="Email Template" invisible="not yes_show_mail_template" required="yes_show_mail_template" options="{'no_create': True, 'no_open': True}"/>
+                            <field name="yes_tag_id" string="SO Tag" options="{'no_create': True, 'no_open': True}"/>
+                            <field name="yes_message" string="Log Message"/>
+                        </group>
+                        <group name="no_flow" string="If No">
+                            <field name="no_id" string="Flow" invisible="action != 'decision'" required="action == 'decision'" options="{'no_create': True, 'no_open': True}"/>
+                            <field name="no_mail_template_id" string="Email Template" invisible="not no_show_mail_template" required="no_show_mail_template" options="{'no_create': True, 'no_open': True}"/>
+                            <field name="no_tag_id" string="SO Tag" options="{'no_create': True, 'no_open': True}"/>
+                            <field name="no_message" string="Log Message"/>
+                        </group>
                     </group>
                 </form>
             </field>

@@ -22,10 +22,19 @@ class CaptureFlow(models.Model):
         default="# object.amount_total>1000\n# len(object.order_line)>1\n"
                 "# object.partner_id.country_id.code=='US'\n# return True/False\n")
     sequence = fields.Integer(string="Sequence", default=10)
+    # Yes Flow
     yes_id = fields.Many2one('capture.flow', string="Yes Flow", domain=['|', ('action', '!=', 'decision'), ('active', '=', True)])
+    yes_mail_template_id = fields.Many2one('mail.template', string="Yes - Email Template", domain=[('model', '=', 'sale.order')])
+    yes_show_mail_template = fields.Boolean(string="Yes - Show Mail Template", compute='_compute_show_mail_template')
+    yes_tag_id = fields.Many2one('crm.tag', string="Yes - Tag")
+    yes_message = fields.Html(string="Yes - Log Message")
+    # No Flow
     no_id = fields.Many2one('capture.flow', string="No Flow", domain=['|', ('action', '!=', 'decision'), ('active', '=', True)])
-    mail_template_id = fields.Many2one('mail.template', string="Email Template", domain=[('model', '=', 'sale.order')])
-    show_mail_template = fields.Boolean(string="Show Mail Template", compute='_compute_show_mail_template')
+    no_mail_template_id = fields.Many2one('mail.template', string="No - Email Template", domain=[('model', '=', 'sale.order')])
+    no_show_mail_template = fields.Boolean(string="No - Show Mail Template", compute='_compute_show_mail_template')
+    no_tag_id = fields.Many2one('crm.tag', string="No - Tag")
+    no_message = fields.Html(string="No - Log Message")
+
     action = fields.Selection([
         ('decision', 'Decision'),
         ('capture', 'Capture'),
@@ -42,11 +51,17 @@ class CaptureFlow(models.Model):
     @api.depends('yes_id', 'no_id')
     def _compute_show_mail_template(self):
         for rec in self:
-            show_mail_template = False
-            if rec.action == 'decision' and rec.yes_id or rec.no_id:
-                if rec.yes_id.action == 'send_email' or rec.no_id.action == 'send_email':
-                    show_mail_template = True
-            rec.show_mail_template = show_mail_template
+            yes_show_mail_template = False
+            no_show_mail_template = False
+            if rec.action == 'decision':
+                if rec.yes_id and rec.yes_id.action == 'send_email':
+                    yes_show_mail_template = True
+                if rec.no_id and rec.no_id.action == 'send_email':
+                    no_show_mail_template = True
+            rec.write({
+                'yes_show_mail_template': yes_show_mail_template,
+                'no_show_mail_template': no_show_mail_template
+            })
 
     @api.model
     def evaluate(self):

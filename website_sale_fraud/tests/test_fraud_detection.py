@@ -22,6 +22,11 @@ class TestFraudDetection(TransactionCase):
         self.payment_method = self.env.ref('payment.payment_method_unknown')
         self.provider = self.env.ref('payment.payment_provider_demo')
 
+        # Create a test tag
+        self.tag = self.env['crm.tag'].create({
+            'name': 'Test Tag'
+        })
+
         # Create a test partner
         self.partner = self.env['res.partner'].create({
             'name': 'Test Partner',
@@ -66,7 +71,9 @@ class TestFraudDetection(TransactionCase):
             'action': 'decision',
             'expression': 'object.amount_total>10',
             'yes_id': self.flow_capture.id,
-            'no_id': self.flow_review.id
+            'no_id': self.flow_review.id,
+            'yes_tag_id': self.tag.id,
+            'yes_message': """Test Yes Message"""
         })
 
         self.test_flow_capture_no = self.env['capture.flow'].create({
@@ -74,16 +81,27 @@ class TestFraudDetection(TransactionCase):
             'action': 'decision',
             'expression': 'object.amount_total>11',
             'yes_id': self.flow_capture.id,
-            'no_id': self.flow_review.id
+            'no_id': self.flow_review.id,
+            'no_tag_id': self.tag.id,
+            'no_message': """Test No Message"""
         })
 
-        self.test_flow_send_email = self.env['capture.flow'].create({
-            'name': 'Test Flow - Send Email',
+        self.test_flow_yes_send_email = self.env['capture.flow'].create({
+            'name': 'Test Flow - Send Email - Yes',
             'action': 'decision',
             'expression': 'object.amount_total>10',
             'yes_id': self.flow_send_email.id,
             'no_id': self.flow_review.id,
-            'mail_template_id': self.env.ref('sale.mail_template_sale_confirmation').id
+            'yes_mail_template_id': self.env.ref('sale.mail_template_sale_confirmation').id
+        })
+
+        self.test_flow_no_send_email = self.env['capture.flow'].create({
+            'name': 'Test Flow - Send Email - No',
+            'action': 'decision',
+            'expression': 'object.amount_total>10',
+            'yes_id': self.flow_send_email.id,
+            'no_id': self.flow_review.id,
+            'no_mail_template_id': self.env.ref('sale.mail_template_sale_confirmation').id
         })
 
         # Define a chain of seven sequential capture flows for testing multiple conditions
@@ -149,7 +167,11 @@ class TestFraudDetection(TransactionCase):
 
         # Ensure that the correct message was logged
         args, kwargs = mock_message_post.call_args
+        assert "Test Yes Message" in kwargs['body']
         assert "🔄 Auto-capture will be processed after shipping" in kwargs['body']
+
+        # Ensure that the correct tag was posted on the SO
+        self.assertIn(self.tag.id, self.sale_order.tag_ids.ids)
 
     @patch('odoo.addons.sale.models.sale_order.SaleOrder.message_post')
     def test_flow_capture_no_condition(self, mock_message_post):
@@ -163,13 +185,39 @@ class TestFraudDetection(TransactionCase):
 
         # Ensure that the correct message was logged
         args, kwargs = mock_message_post.call_args
+        assert "Test No Message" in kwargs['body']
         assert "⚠️ Transaction requires manual review and approval." in kwargs['body']
 
-    def test_flow_email_condition(self):
-        """Tests if an email is created and correctly linked to the sale order when the fraud check triggers an email flow."""
+        # Ensure that the correct tag was posted on the SO
+        self.assertIn(self.tag.id, self.sale_order.tag_ids.ids)
 
-        # Execute fraud check that should trigger an email sending flow
-        self.sale_order.check_fraud(self.test_flow_send_email)
+    def test_flow_yes_email_condition(self):
+        """Tests if an email is created and correctly linked to the sale order when the fraud check triggers an email flow on the "Yes Flow"."""
+
+        # Execute fraud check that should trigger an email sending flow considering the Yes Flow
+        self.sale_order.check_fraud(self.test_flow_yes_send_email)
+
+        # Search for the notification, on the mail.message, linked to the sale order
+        notification = self.env['mail.message'].search([
+            ('res_id', '=', self.sale_order.id),
+            ('model', '=', 'sale.order'),
+            ('subtype_id', '=', self.env.ref('mail.mt_note').id)
+        ], limit=1)
+
+        self.assertIn("📧 An email notification will be sent to the client.", notification.body)
+
+        # Assert that the notification was created
+        self.assertTrue(notification, f"No Message was found linked to sale.order with ID {self.sale_order.id}")
+
+        # Assert that the notification is correctly linked to the sale order
+        self.assertEqual(notification.res_id, self.sale_order.id, "Notification res_id does not match the sale order ID")
+        self.assertEqual(notification.model, 'sale.order', "notification model is not 'sale.order'")
+
+    def test_flow_no_email_condition(self):
+        """Tests if an email is created and correctly linked to the sale order when the fraud check triggers an email flow on the "No Flow"."""
+
+        # Execute fraud check that should trigger an email sending flow considering the No Flow
+        self.sale_order.check_fraud(self.test_flow_no_send_email)
 
         # Search for the notification, on the mail.message, linked to the sale order
         notification = self.env['mail.message'].search([

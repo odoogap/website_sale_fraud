@@ -46,6 +46,21 @@ class SaleOrder(models.Model):
             messages.append(
                 f"{parent_flow.name}: {parent_flow_condition}<br/>"
             )
+            # Update "Tag" on the SO and also the "Log Message" based on the Executed Flow
+            if parent_flow_condition == 'yes':
+                if parent_flow.yes_tag_id:
+                    self.tag_ids = [(4, parent_flow.yes_tag_id.id)]
+                if parent_flow.yes_message:
+                    messages.append(
+                        f"{parent_flow.yes_message}<br/>"
+                    )
+            else:
+                if parent_flow.no_tag_id:
+                    self.tag_ids = [(4, parent_flow.no_tag_id.id)]
+                if parent_flow.no_message:
+                    messages.append(
+                        f"{parent_flow.no_message}<br/>"
+                    )
 
         # Handle different fraud actions
         if flow.action == 'capture':
@@ -58,15 +73,27 @@ class SaleOrder(models.Model):
                 f"⚠️ Transaction requires manual review and approval.<br/><br/>"
             )
         elif flow.action == 'send_email':
-            if parent_flow and parent_flow.mail_template_id:
-                self.with_user(SUPERUSER_ID).with_context(force_send=True).message_post_with_source(
-                    parent_flow.mail_template_id,
-                    email_layout_xmlid='mail.mail_notification_layout_with_responsible_signature',
-                    subtype_xmlid='mail.mt_comment',
-                )
-            messages.append(
-                f"📧 An email notification will be sent to the client.<br/><br/>"
-            )
+            if parent_flow and parent_flow_condition:
+                if parent_flow_condition == 'yes':
+                    if parent_flow.yes_mail_template_id:
+                        self.with_user(SUPERUSER_ID).with_context(force_send=True).message_post_with_source(
+                            parent_flow.yes_mail_template_id,
+                            email_layout_xmlid='mail.mail_notification_layout_with_responsible_signature',
+                            subtype_xmlid='mail.mt_comment',
+                        )
+                    messages.append(
+                        f"📧 An email notification will be sent to the client.<br/><br/>"
+                    )
+                else:
+                    if parent_flow.no_mail_template_id:
+                        self.with_user(SUPERUSER_ID).with_context(force_send=True).message_post_with_source(
+                            parent_flow.no_mail_template_id,
+                            email_layout_xmlid='mail.mail_notification_layout_with_responsible_signature',
+                            subtype_xmlid='mail.mt_comment',
+                        )
+                    messages.append(
+                        f"📧 An email notification will be sent to the client.<br/><br/>"
+                    )
         else:
             # Evaluate next steps based on flow conditions
             if safe_eval(flow.expression, {'object': self}):
