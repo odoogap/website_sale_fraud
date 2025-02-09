@@ -73,7 +73,8 @@ class TestFraudDetection(TransactionCase):
             'yes_id': self.flow_capture.id,
             'no_id': self.flow_review.id,
             'yes_tag_id': self.tag.id,
-            'yes_message': """Test Yes Message"""
+            'yes_message': "🔄 Auto-capture will be processed after shipping.",
+            'no_message': "⚠️ Transaction requires manual review and approval."
         })
 
         self.test_flow_capture_no = self.env['capture.flow'].create({
@@ -83,7 +84,8 @@ class TestFraudDetection(TransactionCase):
             'yes_id': self.flow_capture.id,
             'no_id': self.flow_review.id,
             'no_tag_id': self.tag.id,
-            'no_message': """Test No Message"""
+            'yes_message': "🔄 Auto-capture will be processed after shipping.",
+            'no_message': "⚠️ Transaction requires manual review and approval."
         })
 
         self.test_flow_yes_send_email = self.env['capture.flow'].create({
@@ -92,16 +94,20 @@ class TestFraudDetection(TransactionCase):
             'expression': 'object.amount_total>10',
             'yes_id': self.flow_send_email.id,
             'no_id': self.flow_review.id,
-            'yes_mail_template_id': self.env.ref('sale.mail_template_sale_confirmation').id
+            'yes_mail_template_id': self.env.ref('sale.mail_template_sale_confirmation').id,
+            'yes_message': "📧 An email notification will be sent to the client.",
+            'no_message': "⚠️ Transaction requires manual review and approval."
         })
 
         self.test_flow_no_send_email = self.env['capture.flow'].create({
             'name': 'Test Flow - Send Email - No',
             'action': 'decision',
-            'expression': 'object.amount_total>10',
-            'yes_id': self.flow_send_email.id,
-            'no_id': self.flow_review.id,
-            'no_mail_template_id': self.env.ref('sale.mail_template_sale_confirmation').id
+            'expression': 'object.amount_total>11',
+            'yes_id': self.flow_capture.id,
+            'no_id': self.flow_send_email.id,
+            'no_mail_template_id': self.env.ref('sale.mail_template_sale_confirmation').id,
+            'yes_message': "🔄 Auto-capture will be processed after shipping.",
+            'no_message': "📧 An email notification will be sent to the client."
         })
 
         # Define a chain of seven sequential capture flows for testing multiple conditions
@@ -110,7 +116,9 @@ class TestFraudDetection(TransactionCase):
             'action': 'decision',
             'expression': 'len(object.order_line)>=1',
             'yes_id': self.flow_capture.id,
-            'no_id': self.flow_review.id
+            'no_id': self.flow_review.id,
+            'yes_message': "🔄 Auto-capture will be processed after shipping.",
+            'no_message': "⚠️ Transaction requires manual review and approval."
         })
         self.test_flow_6 = self.env['capture.flow'].create({
             'name': 'Test Flow 6',
@@ -167,8 +175,7 @@ class TestFraudDetection(TransactionCase):
 
         # Ensure that the correct message was logged
         args, kwargs = mock_message_post.call_args
-        assert "Test Yes Message" in kwargs['body']
-        assert "🔄 Auto-capture will be processed after shipping" in kwargs['body']
+        assert "🔄 Auto-capture will be processed after shipping." in kwargs['body']
 
         # Ensure that the correct tag was posted on the SO
         self.assertIn(self.tag.id, self.sale_order.tag_ids.ids)
@@ -185,7 +192,6 @@ class TestFraudDetection(TransactionCase):
 
         # Ensure that the correct message was logged
         args, kwargs = mock_message_post.call_args
-        assert "Test No Message" in kwargs['body']
         assert "⚠️ Transaction requires manual review and approval." in kwargs['body']
 
         # Ensure that the correct tag was posted on the SO
@@ -247,4 +253,4 @@ class TestFraudDetection(TransactionCase):
 
         # Ensure that the correct message was logged
         args, kwargs = mock_message_post.call_args
-        assert "🔄 Auto-capture will be processed after shipping" in kwargs['body']
+        assert "🔄 Auto-capture will be processed after shipping." in kwargs['body']

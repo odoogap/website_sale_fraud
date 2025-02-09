@@ -52,26 +52,21 @@ class SaleOrder(models.Model):
                     self.tag_ids = [(4, parent_flow.yes_tag_id.id)]
                 if parent_flow.yes_message:
                     messages.append(
-                        f"{parent_flow.yes_message}<br/>"
+                        f"{parent_flow.yes_message}"
                     )
             else:
                 if parent_flow.no_tag_id:
                     self.tag_ids = [(4, parent_flow.no_tag_id.id)]
                 if parent_flow.no_message:
                     messages.append(
-                        f"{parent_flow.no_message}<br/>"
+                        f"{parent_flow.no_message}"
                     )
 
         # Handle different fraud actions
         if flow.action == 'capture':
             self.auto_capture_after_shipping = True
-            messages.append(
-                f"🔄 Auto-capture will be processed after shipping.<br/><br/>"
-            )
         elif flow.action == 'review':
-            messages.append(
-                f"⚠️ Transaction requires manual review and approval.<br/><br/>"
-            )
+            pass
         elif flow.action == 'send_email':
             if parent_flow and parent_flow_condition:
                 if parent_flow_condition == 'yes':
@@ -81,9 +76,6 @@ class SaleOrder(models.Model):
                             email_layout_xmlid='mail.mail_notification_layout_with_responsible_signature',
                             subtype_xmlid='mail.mt_comment',
                         )
-                    messages.append(
-                        f"📧 An email notification will be sent to the client.<br/><br/>"
-                    )
                 else:
                     if parent_flow.no_mail_template_id:
                         self.with_user(SUPERUSER_ID).with_context(force_send=True).message_post_with_source(
@@ -91,9 +83,6 @@ class SaleOrder(models.Model):
                             email_layout_xmlid='mail.mail_notification_layout_with_responsible_signature',
                             subtype_xmlid='mail.mt_comment',
                         )
-                    messages.append(
-                        f"📧 An email notification will be sent to the client.<br/><br/>"
-                    )
         else:
             # Evaluate next steps based on flow conditions
             if safe_eval(flow.expression, {'object': self}):
