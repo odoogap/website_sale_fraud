@@ -59,13 +59,13 @@
                         <field name="no_show_mail_template" string="Show Mail Template" invisible="1"/>
                         <field name="name"/>
                         <field name="expression" widget="code" options="{'mode': 'python'}" invisible="action != 'decision'" required="action == 'decision'"/>
-                        <group name="yes_flow" string="If Yes">
+                        <group name="yes_flow" string="If Yes" invisible="action != 'decision'">
                             <field name="yes_id" string="Flow" invisible="action != 'decision'" required="action == 'decision'" options="{'no_create': True, 'no_open': True}"/>
                             <field name="yes_mail_template_id" string="Email Template" invisible="not yes_show_mail_template" required="yes_show_mail_template" options="{'no_create': True, 'no_open': True}"/>
                             <field name="yes_tag_id" string="SO Tag" options="{'no_create': True, 'no_open': True}"/>
                             <field name="yes_message" string="Log Message"/>
                         </group>
-                        <group name="no_flow" string="If No">
+                        <group name="no_flow" string="If No" invisible="action != 'decision'">
                             <field name="no_id" string="Flow" invisible="action != 'decision'" required="action == 'decision'" options="{'no_create': True, 'no_open': True}"/>
                             <field name="no_mail_template_id" string="Email Template" invisible="not no_show_mail_template" required="no_show_mail_template" options="{'no_create': True, 'no_open': True}"/>
                             <field name="no_tag_id" string="SO Tag" options="{'no_create': True, 'no_open': True}"/>
