@@ -21,7 +21,7 @@ class CaptureFlow(models.Model):
         string="Expression",
         default="# object.amount_total>1000\n# len(object.order_line)>1\n"
                 "# object.partner_id.country_id.code=='US'\n# return True/False\n")
-    sequence = fields.Integer(string="Sequence", default=10)
+    sequence = fields.Integer(string="Sequence", default=0, index=True, required=True)
     # Yes Flow
     yes_id = fields.Many2one('capture.flow', string="Yes Flow", domain=['|', ('action', '!=', 'decision'), ('active', '=', True)])
     yes_mail_template_id = fields.Many2one('mail.template', string="Yes - Email Template", domain=[('model', '=', 'sale.order')])
@@ -66,3 +66,25 @@ class CaptureFlow(models.Model):
     @api.model
     def evaluate(self):
         return tools
+
+    @api.model_create_multi
+    def create(self, values_list):
+        # Retrieve the highest existing sequence number
+        last_sequence = self.search([('active', 'in', (True, False))], order="sequence desc", limit=1).sequence or 0
+        for values in values_list:
+            # Increment the sequence only if it is not already provided
+            if 'sequence' not in values or values['sequence'] == 0:
+                last_sequence += 1
+                values['sequence'] = last_sequence
+        # Create records with updated sequence values
+        return super(CaptureFlow, self).create(values_list)
+
+    @api.returns('self', lambda value: value.id)
+    def copy(self, default=None):
+        default = dict(default or {})
+        if 'name' not in default:
+            default['name'] = _("%s (Copy)", self.name)
+        # Get the highest sequence and increment it
+        last_sequence = self.search([], order="sequence desc", limit=1).sequence or 0
+        default['sequence'] = last_sequence + 1
+        return super(CaptureFlow, self).copy(default=default)
