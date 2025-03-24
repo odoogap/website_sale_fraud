@@ -78,13 +78,14 @@ class CaptureFlow(models.Model):
                 values['sequence'] = last_sequence
         # Create records with updated sequence values
         return super(CaptureFlow, self).create(values_list)
-
-    @api.returns('self', lambda value: value.id)
-    def copy(self, default=None):
+    
+    def copy_data(self, default=None):
         default = dict(default or {})
-        if 'name' not in default:
-            default['name'] = _("%s (Copy)", self.name)
-        # Get the highest sequence and increment it
-        last_sequence = self.search([], order="sequence desc", limit=1).sequence or 0
-        default['sequence'] = last_sequence + 1
-        return super(CaptureFlow, self).copy(default=default)
+        last_sequence = self.search([('active', 'in', (True, False))], order="sequence desc", limit=1).sequence or 0
+        last_sequence += 1
+        vals_list = super().copy_data(default=default)
+        for flow, vals in zip(self, vals_list):
+            if 'name' not in default:
+                vals['name'] = _("%s (copy)", flow.name)
+            vals['sequence'] = last_sequence
+        return vals_list
