@@ -11,6 +11,7 @@
     'version': '1.1',
     'depends': [
         'website_sale',
+        'sale_stock',
         'payment',
     ],
     'data': [
