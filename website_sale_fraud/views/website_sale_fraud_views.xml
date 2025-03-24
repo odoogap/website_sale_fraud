@@ -8,11 +8,11 @@
         <!--
             capture.flow views
         -->
-        <record id="capture_flow_tree" model="ir.ui.view">
-            <field name="name">capture.flow.tree</field>
+        <record id="capture_flow_list" model="ir.ui.view">
+            <field name="name">capture.flow.list</field>
             <field name="model">capture.flow</field>
             <field name="arch" type="xml">
-                <tree string="Payment Auto Capture" decoration-danger="not active">
+                <list string="Payment Auto Capture" decoration-danger="not active">
                     <field name="sequence" widget="handle"/>
                     <field name="name"/>
                     <field name="active" optional="hide"/>
@@ -31,7 +31,7 @@
                     <field name="expression" invisible="action != 'decision'" required="action == 'decision'"/>
                     <field name="yes_id" invisible="action != 'decision'" required="action == 'decision'"/>
                     <field name="no_id" invisible="action != 'decision'"/>
-                </tree>
+                </list>
             </field>
         </record>
 
@@ -79,8 +79,8 @@
         <record model="ir.actions.act_window" id="website_fraud_rules_action">
             <field name="name">Website Fraud Rules</field>
             <field name="res_model">capture.flow</field>
-            <field name="view_mode">tree,form</field>
-            <field name="view_id" ref="capture_flow_tree"/>
+            <field name="view_mode">list,form</field>
+            <field name="view_id" ref="capture_flow_list"/>
             <field name="domain">[('action', '=', 'decision')]</field>
             <field name="help" type="html">
                 <p class="o_view_nocontent_smiling_face">
