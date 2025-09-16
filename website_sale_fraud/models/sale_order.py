@@ -117,6 +117,5 @@ class SaleOrderLine(models.Model):
                 statuses.update(incoming_moves.mapped('state'))
 
         if ('done' in statuses and len(statuses)==1 and
-                self.order_id.auto_capture_after_shipping and
                 self.order_id.website_id and  self.order_id.authorized_transaction_ids):
             self.env['payment.capture.wizard'].with_context(active_ids=self.order_id.authorized_transaction_ids.ids).create({}).action_capture()
