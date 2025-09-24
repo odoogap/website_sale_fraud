@@ -65,8 +65,10 @@ class SaleOrder(models.Model):
         # Handle different fraud actions
         if flow.action == 'capture':
             self.auto_capture_after_shipping = True
+            if self.is_all_service:
+                self.env['payment.capture.wizard'].with_context(active_ids=self.authorized_transaction_ids.ids).create({}).action_capture()
         elif flow.action == 'review':
-            pass
+            self.auto_capture_after_shipping = False
         elif flow.action == 'send_email':
             if parent_flow and parent_flow_condition:
                 if parent_flow_condition == 'yes':
@@ -115,7 +117,9 @@ class SaleOrderLine(models.Model):
                 outgoing_moves, incoming_moves = line._get_outgoing_incoming_moves()
                 statuses.update(outgoing_moves.mapped('state'))
                 statuses.update(incoming_moves.mapped('state'))
-
-        if ('done' in statuses and len(statuses)==1 and
-                self.order_id.website_id and  self.order_id.authorized_transaction_ids):
+        if (
+                'done' in statuses and len(statuses)==1 and
+                self.order_id.website_id and
+                self.order_id.authorized_transaction_ids
+            ):
             self.env['payment.capture.wizard'].with_context(active_ids=self.order_id.authorized_transaction_ids.ids).create({}).action_capture()
