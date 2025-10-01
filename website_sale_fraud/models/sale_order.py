@@ -73,17 +73,21 @@ class SaleOrder(models.Model):
             if parent_flow and parent_flow_condition:
                 if parent_flow_condition == 'yes':
                     if parent_flow.yes_mail_template_id:
-                        self.with_user(SUPERUSER_ID).with_context(force_send=True).message_post_with_source(
-                            parent_flow.yes_mail_template_id,
-                            email_layout_xmlid='mail.mail_notification_layout_with_responsible_signature',
-                            subtype_xmlid='mail.mt_comment',
+                        # Send email without posting a message to prevent other users
+                        # from receiving a notification about it
+                        parent_flow.yes_mail_template_id.with_user(SUPERUSER_ID).send_mail(
+                            self.id,
+                            force_send=True,
+                            raise_exception=True
                         )
                 else:
                     if parent_flow.no_mail_template_id:
-                        self.with_user(SUPERUSER_ID).with_context(force_send=True).message_post_with_source(
-                            parent_flow.no_mail_template_id,
-                            email_layout_xmlid='mail.mail_notification_layout_with_responsible_signature',
-                            subtype_xmlid='mail.mt_comment',
+                        # Send email without posting a message to prevent other users
+                        # from receiving a notification about it
+                        parent_flow.no_mail_template_id.with_user(SUPERUSER_ID).send_mail(
+                            self.id,
+                            force_send=True,
+                            raise_exception=True
                         )
         else:
             # Evaluate next steps based on flow conditions
