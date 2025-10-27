@@ -20,9 +20,34 @@ class PaymentProvider(models.Model):
         readonly=True, default=True
     )
 
+    disable_capture_manually = fields.Boolean(
+        string="Disable Capture Manually",
+        help="Used to enable/disable manual capture.",
+        default=False
+    )
+
     @api.model
     def enable_capture_manually(self):
-        """ Enable "capture_manually" on all the Payment Providers """
-        providers = self.search([('capture_manually', '=', False)])
+        """ Enable "capture_manually" on all the Payment Providers where "disable_capture_manually" Is equal to FALSE """
+        providers = self.search([('disable_capture_manually', '=', False)])
         if providers:
             providers.write({'capture_manually': True})
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if 'disable_capture_manually' in vals:
+                if vals.get('disable_capture_manually') is True:
+                    vals['capture_manually'] = False
+                else:
+                    vals['capture_manually'] = True
+        return super(PaymentProvider, self).create(vals_list)
+
+    def write(self, vals):
+        if 'disable_capture_manually' in vals:
+            for rec in self:
+                if vals.get('disable_capture_manually') is True:
+                    rec.capture_manually = False
+                else:
+                    rec.capture_manually = True
+        return super(PaymentProvider, self).write(vals)

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Copyright 2025 ERPGAP/PROMPTEQUATION LDA
+    License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl).
+-->
+<odoo>
+    <data>
+
+        <record id="payment_provider_form" model="ir.ui.view">
+            <field name="name">payment.provider.form</field>
+            <field name="model">payment.provider</field>
+            <field name="inherit_id" ref="payment.payment_provider_form"/>
+            <field name="arch" type="xml">
+                <field name="capture_manually" invisible="not support_manual_capture"/>
+                <xpath expr="//field[@name='capture_manually']" position="after">
+                    <field name="disable_capture_manually"/>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+</odoo>

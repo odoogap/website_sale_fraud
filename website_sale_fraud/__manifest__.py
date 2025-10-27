@@ -18,6 +18,7 @@
         'security/ir.model.access.csv',
         'data/capture_flow_data.xml',
         'data/payment_provider_data.xml',
+        'views/payment_provider_views.xml',
         'views/website_sale_fraud_views.xml',
     ],
     'demo': [
