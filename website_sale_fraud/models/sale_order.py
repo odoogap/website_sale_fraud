@@ -77,8 +77,8 @@ class SaleOrder(models.Model):
                         # from receiving a notification about it
                         parent_flow.yes_mail_template_id.with_user(SUPERUSER_ID).send_mail(
                             self.id,
-                            force_send=True,
-                            raise_exception=True
+                            force_send=False,
+                            raise_exception=False
                         )
                 else:
                     if parent_flow.no_mail_template_id:
@@ -86,8 +86,8 @@ class SaleOrder(models.Model):
                         # from receiving a notification about it
                         parent_flow.no_mail_template_id.with_user(SUPERUSER_ID).send_mail(
                             self.id,
-                            force_send=True,
-                            raise_exception=True
+                            force_send=False,
+                            raise_exception=False
                         )
         else:
             # Evaluate next steps based on flow conditions
