@@ -126,4 +126,7 @@ class SaleOrderLine(models.Model):
                 self.order_id.website_id and
                 self.order_id.authorized_transaction_ids
             ):
-            self.env['payment.capture.wizard'].with_context(active_ids=self.order_id.authorized_transaction_ids.ids).create({}).action_capture()
+            self.env['payment.capture.wizard'].with_context(
+                active_ids=self.order_id.authorized_transaction_ids.ids,
+                ignore_if_already_captured=True
+            ).create({}).action_capture()
