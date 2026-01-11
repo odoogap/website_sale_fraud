@@ -4,7 +4,7 @@
     License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl).
 -->
 <odoo>
-    <data noupdate="0">
+    <data noupdate="1">
 
         <!-- Enable "capture_manually" on all the Payment Providers -->
         <function model="payment.provider" name="enable_capture_manually"/>
