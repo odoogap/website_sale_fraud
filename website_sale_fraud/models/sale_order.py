@@ -26,7 +26,7 @@ class SaleOrder(models.Model):
     def check_fraud(self, start_flow=None):
         """Check fraud detection process for sales orders."""
         for so in self:
-            if so.fraud_detection_completed or not so.authorized_transaction_ids:
+            if so.fraud_detection_completed or not (so.authorized_transaction_ids or so._is_paid_by_gift_card_only()):
                 continue
             if start_flow:
                 start_rule = self.env['capture.flow'].search([('id', '=', start_flow.id)])
@@ -35,6 +35,12 @@ class SaleOrder(models.Model):
             if start_rule:
                 so._check_fraud(start_rule)
             so.fraud_detection_completed = True
+
+    def _is_paid_by_gift_card_only(self):
+        """Orders fully paid by gift card have no transaction but must still be checked."""
+        self.ensure_one()
+        return not self.authorized_transaction_ids and not self.amount_total and any(
+            line.coupon_id.program_type == 'gift_card' for line in self.order_line)
 
     def _check_fraud(self, flow, parent_flow=None, parent_flow_condition=None, messages=None):
         """Recursively process fraud detection rules and log actions."""
@@ -65,7 +71,7 @@ class SaleOrder(models.Model):
         # Handle different fraud actions
         if flow.action == 'capture':
             self.auto_capture_after_shipping = True
-            if self.is_all_service:
+            if self.is_all_service and self.authorized_transaction_ids:
                 self.env['payment.capture.wizard'].with_context(active_ids=self.authorized_transaction_ids.ids).create({}).action_capture()
         elif flow.action == 'review':
             self.auto_capture_after_shipping = False

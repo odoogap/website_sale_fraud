@@ -8,10 +8,11 @@
     'sequence': 50,
     'summary': 'Detect fraudulent orders',
     'website': 'https://www.erpgap.com/ecommerce/',
-    'version': '1.1',
+    'version': '1.2',
     'depends': [
         'website_sale',
         'sale_stock',
+        'sale_loyalty',
         'payment',
     ],
     'data': [
